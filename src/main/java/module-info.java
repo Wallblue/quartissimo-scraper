@@ -5,7 +5,10 @@ module com.quartissimo.scrapapp.ui {
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
     requires org.seleniumhq.selenium.chrome_driver;
+    requires org.seleniumhq.selenium.support;
+    requires io.github.bonigarcia.webdrivermanager;
 
     opens org.quartissimo.scrapapp to javafx.fxml;
     exports org.quartissimo.scrapapp;
+    requires dev.failsafe.core;
 }
