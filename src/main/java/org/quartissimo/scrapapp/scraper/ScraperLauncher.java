@@ -7,7 +7,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 
 public class ScraperLauncher {
     private final WebDriver driver;
-    private Scraper[] scrapers;
+    private final Scraper[] scrapers;
 
     public ScraperLauncher(Scraper... scrapers) {
         this.scrapers = scrapers;

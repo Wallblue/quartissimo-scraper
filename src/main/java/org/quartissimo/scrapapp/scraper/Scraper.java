@@ -1,6 +1,7 @@
 package org.quartissimo.scrapapp.scraper;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -14,29 +15,32 @@ import java.util.Random;
 public abstract class Scraper {
     protected String domainUrl;
     protected WebDriver driver;
-    protected int minWaitingTime = 1000;
-    protected int maxWaitingTime = 3000;
 
     public Scraper(){}
-
-    public Scraper(int minWaitingTime, int maxWaitingTime){
-        this.minWaitingTime = minWaitingTime;
-        this.maxWaitingTime = maxWaitingTime;
-    }
 
     public Scraper(WebDriver driver){
         this.driver = driver;
     }
 
-    public Scraper(WebDriver driver, int minWaitingTime, int maxWaitingTime){
-        this.driver = driver;
-        this.minWaitingTime = minWaitingTime;
-        this.maxWaitingTime = maxWaitingTime;
-    }
-
-    public void waiting(int min, int max) throws InterruptedException {
+    protected void waiting(int min, int max) throws InterruptedException {
         Random rand = new Random();
         Thread.sleep(min + rand.nextInt(max - min));
+    }
+
+    protected void conditionalWaiting(int timeoutInMs, By selectorA, By selectorB) throws NoSuchElementException {
+        int waited = 0;
+        final int timeToWait = 200;
+        while(waited < timeoutInMs){
+            boolean aPresent = !this.driver.findElements(selectorA).isEmpty();
+            boolean bPresent = !this.driver.findElements(selectorB).isEmpty();
+
+            if(aPresent || bPresent) return;
+
+            try{
+                Thread.sleep(timeToWait);
+                waited += timeToWait;
+            } catch (InterruptedException _) {}
+        }
     }
 
     protected void loadPage(String url, By elementToWaitFor){
@@ -49,14 +53,14 @@ public abstract class Scraper {
         this.driver = driver;
     }
 
-    // This methods allow us to look for an element that could be absent without crashing
+    // These methods allow us to look for an element that could be absent without crashing
     protected Optional<WebElement> safeFindElement(By by){
         List<WebElement> found = this.driver.findElements(by);
         return found.isEmpty() ? Optional.empty() : Optional.of(found.getFirst());
     }
 
     protected Optional<WebElement> safeFindElementInElement(WebElement sourceElement, By by){
-        List<WebElement> found = this.driver.findElements(by);
+        List<WebElement> found = sourceElement.findElements(by);
         return found.isEmpty() ? Optional.empty() : Optional.of(found.getFirst());
     }
 
