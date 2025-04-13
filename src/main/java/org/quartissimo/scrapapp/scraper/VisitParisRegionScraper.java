@@ -53,6 +53,12 @@ public class VisitParisRegionScraper extends Scraper {
             pageLinks.addLast(a_tag.getAttribute("href"));
         }
 
+        // We check for the shopping page because it is the only mosaic page that have 2 mosaic panels, and we only want the first one to avoid a loop
+        String currentUrl = driver.getCurrentUrl();
+        if(currentUrl != null && currentUrl.equals("https://www.visitparisregion.com/fr/a-voir-a-faire/faire-du-shopping")){
+            pageLinks = pageLinks.subList(0, 3);
+        }
+
         ArrayList<Activity> activities = new ArrayList<>();
         for(String link : pageLinks){
             this.driver.get(link);
@@ -68,7 +74,7 @@ public class VisitParisRegionScraper extends Scraper {
                     pageTotal = Integer.parseInt(paginatorElement.getLast().getText());
 
                 // We scrape each page
-                for(int currentPage = 1; currentPage <= pageTotal; currentPage++) {
+                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 2; currentPage++) {
                     if(currentPage > 1) {
                         this.loadPage(link + "?page=" + currentPage, By.className("crtTeaser-content"));
                     }
@@ -77,8 +83,8 @@ public class VisitParisRegionScraper extends Scraper {
                     activities.addAll(this.scrapeListTypePage());
                 }
             } else { // If it's a mosaic page
-                //activities.addAll(this.scrapeMosaicTypePage());
-                System.out.println("Mosaic");
+                activities.addAll(this.scrapeMosaicTypePage());
+                //System.out.println("Mosaic");
             }
         }
         return activities;
@@ -182,7 +188,7 @@ public class VisitParisRegionScraper extends Scraper {
             this.closeTab();
 
             activities.addLast(newActivity);
-            if (++i == 5) return activities;
+            if (++i == 1) return activities;
         }
         return activities;
     }
