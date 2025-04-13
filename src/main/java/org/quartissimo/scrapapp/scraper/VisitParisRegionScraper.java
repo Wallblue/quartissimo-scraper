@@ -1,10 +1,13 @@
 package org.quartissimo.scrapapp.scraper;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.WindowType;
 import org.quartissimo.scrapapp.scraper.models.Activity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,49 +25,19 @@ public class VisitParisRegionScraper extends Scraper {
         this.waiting(500, 1000);
 
         // The first page of the website is a "mosaic" type of page
-        this.scrapeMosaicTypePage();
-        /*
-        List<String> pageLinks = new ArrayList<>();
-        for(WebElement a_tag : this.driver.findElements(By.className("crtTeaserSmall"))){
-            pageLinks.addLast(a_tag.getAttribute("href"));
+        ArrayList<Activity> activities = this.scrapeMosaicTypePage();
+
+        // Export all activities in a JSON file
+        ObjectMapper mapper = new ObjectMapper();
+
+        try{
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+            String filePath = "src/main/resources/export.json";
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(filePath), activities);
+            System.out.println("Export done.");
+        }catch(Exception e){
+            e.printStackTrace();
         }
-
-        // Pour les musées déjà
-        this.loadPage(pageLinks.getFirst(), By.className("crtTeaser-content"));
-        // We get the total number of pages there are
-        int pageTotal = Integer.parseInt(driver.findElements(By.cssSelector("ol.crtPagination-list button")).getLast().getText());
-
-        // We scrape each page
-        for(int currentPage = 1; currentPage <= pageTotal; currentPage++) {
-            if(currentPage > 1) {
-                this.loadPage(pageLinks.getFirst() + "?page=" + currentPage, By.className("crtTeaser-content"));
-            }
-            this.waiting(1000, 1500);
-
-            scrapeListTypePage();
-        }/
-
-        for(String link : pageLinks){
-            this.driver.get(link);
-            this.conditionalWaiting(10000, By.className("crtTeaser-content"), By.className("crtTeaserSmall"));
-
-            if(this.driver.findElements(By.className("crtTeaserSmall")).isEmpty()){ // If it's an activity list page
-                // We get the total number of pages there are
-                int pageTotal = Integer.parseInt(driver.findElements(By.cssSelector("ol.crtPagination-list button")).getLast().getText());
-
-                // We scrape each page
-                for(int currentPage = 1; currentPage <= pageTotal; currentPage++) {
-                    if(currentPage > 1) {
-                        this.loadPage(pageLinks.getFirst() + "?page=" + currentPage, By.className("crtTeaser-content"));
-                    }
-                    this.waiting(1000, 1500);
-
-                    scrapeListTypePage();
-                }
-            } else { // If it's a mosaic page
-                scrapeMosaicTypePage();
-            }
-        }*/
     }
 
     private void handleCookiesPopup(){
@@ -74,12 +47,13 @@ public class VisitParisRegionScraper extends Scraper {
         }
     }
 
-    private void scrapeMosaicTypePage() throws InterruptedException {
+    private ArrayList<Activity> scrapeMosaicTypePage() throws InterruptedException {
         List<String> pageLinks = new ArrayList<>();
         for(WebElement a_tag : this.driver.findElements(By.className("crtTeaserSmall"))){
             pageLinks.addLast(a_tag.getAttribute("href"));
         }
 
+        ArrayList<Activity> activities = new ArrayList<>();
         for(String link : pageLinks){
             this.driver.get(link);
             this.conditionalWaiting(10000, By.className("crtTeaser-content"), By.className("crtTeaserSmall"));
@@ -94,22 +68,23 @@ public class VisitParisRegionScraper extends Scraper {
                     pageTotal = Integer.parseInt(paginatorElement.getLast().getText());
 
                 // We scrape each page
-                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 2; currentPage++) {
+                for(int currentPage = 1; currentPage <= pageTotal; currentPage++) {
                     if(currentPage > 1) {
                         this.loadPage(link + "?page=" + currentPage, By.className("crtTeaser-content"));
                     }
                     this.waiting(1000, 1500);
 
-                    scrapeListTypePage();
+                    activities.addAll(this.scrapeListTypePage());
                 }
             } else { // If it's a mosaic page
-                //scrapeMosaicTypePage();
+                //activities.addAll(this.scrapeMosaicTypePage());
                 System.out.println("Mosaic");
             }
         }
+        return activities;
     }
 
-    private void scrapeListTypePage() throws InterruptedException {
+    private ArrayList<Activity> scrapeListTypePage() throws InterruptedException {
         ArrayList<Activity> activities = new ArrayList<>();
 
         int i = 0;
@@ -125,12 +100,12 @@ public class VisitParisRegionScraper extends Scraper {
             String activityPageLink = titleLink.getAttribute("href");
 
 
-            /*/ Get the activity teaser
+            // Get the activity teaser
             Optional<WebElement> shortDesc = this.safeFindElementInElement(article, By.className("crtTeaser-desc"));
             if (shortDesc.isPresent()) {
                 String teaser = shortDesc.get().getAttribute("innerText");
                 newActivity.setShortDescription(teaser != null ? teaser.trim() : "");
-            }*/
+            }
 
             // Get the activity categories
             List<WebElement> categorySpans = article.findElements(By.className("crtTeaser-segment"));
@@ -191,7 +166,7 @@ public class VisitParisRegionScraper extends Scraper {
                 newActivity.setPhoneNumber(phoneNumberContainer.get().getText());
             }
 
-            /*/ Get opening hours
+            // Get opening hours
             Optional<WebElement> hoursContainer = this.safeFindElementInElement(infos, By.cssSelector("div.crtProductOpeningDays div.decorated"));
             if (hoursContainer.isPresent()) {
                 newActivity.setAvailabilities(hoursContainer.get().getText());
@@ -201,14 +176,14 @@ public class VisitParisRegionScraper extends Scraper {
             Optional<WebElement> pricesContainer = this.safeFindElementInElement(infos, By.cssSelector("div.crtProductPrices div.decorated"));
             if (pricesContainer.isPresent()) {
                 newActivity.setPrices(pricesContainer.get().getText());
-            }*/
+            }
 
             // Closing tab and going back to the first one
             this.closeTab();
 
             activities.addLast(newActivity);
-            System.out.println(newActivity);
-            if (++i == 1) return;
+            if (++i == 5) return activities;
         }
+        return activities;
     }
 }
