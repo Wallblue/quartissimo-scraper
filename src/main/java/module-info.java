@@ -11,4 +11,5 @@ module com.quartissimo.scrapapp.ui {
     opens org.quartissimo.scrapapp to javafx.fxml;
     exports org.quartissimo.scrapapp;
     requires dev.failsafe.core;
+    requires org.apache.commons.io;
 }
