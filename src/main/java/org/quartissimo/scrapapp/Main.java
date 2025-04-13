@@ -1,14 +1,8 @@
 package org.quartissimo.scrapapp;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.quartissimo.scrapapp.scraper.ScraperLauncher;
-import org.quartissimo.scrapapp.scraper.VisitParisRegionScraper;
 import org.quartissimo.scrapapp.ui.MainView;
 
 import java.io.IOException;

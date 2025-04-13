@@ -12,4 +12,6 @@ module com.quartissimo.scrapapp.ui {
     exports org.quartissimo.scrapapp;
     requires dev.failsafe.core;
     requires org.apache.commons.io;
+    requires com.fasterxml.jackson.databind;
+    exports org.quartissimo.scrapapp.scraper.models to com.fasterxml.jackson.databind;
 }
