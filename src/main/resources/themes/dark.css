@@ -1,0 +1,23 @@
+.root {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-base: #23272e;
+    -fx-background: #23272e;
+}
+
+.label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.button {
+    -fx-background-color: #333a44;
+    -fx-text-fill: #e0e0e0;
+}
+
+.list-view {
+    -fx-background-color: #23272e;
+}
+
+.text-area {
+    -fx-background-color: #23272e;
+    -fx-text-fill: #e0e0e0;
+}
