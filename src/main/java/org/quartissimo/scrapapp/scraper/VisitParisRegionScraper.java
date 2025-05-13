@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class VisitParisRegionScraper extends Scraper {
+    private double i;
     public VisitParisRegionScraper(){
         this.domainUrl = "https://www.visitparisregion.com/fr";
     }
@@ -49,22 +50,27 @@ public class VisitParisRegionScraper extends Scraper {
 
     private ArrayList<Activity> scrapeMosaicTypePage() throws InterruptedException {
         List<String> pageLinks = new ArrayList<>();
-        for(WebElement a_tag : this.driver.findElements(By.className("crtTeaserSmall"))){
+        WebElement firstContainer = this.driver.findElements(By.className("crtRowLayout")).getFirst();
+        //System.out.println(firstContainer.getAttribute("innerHTML"));
+        List<WebElement> links = firstContainer.findElements(By.className("crtTeaserSmall"));
+        for(WebElement a_tag : links){
             pageLinks.addLast(a_tag.getAttribute("href"));
         }
 
-        // We check for the shopping page because it is the only mosaic page that have 2 mosaic panels, and we only want the first one to avoid a loop
+        // We check for the shopping page because it is the only mosaic page that has 2 mosaic panels, and we only want the first one to avoid a loop
         String currentUrl = driver.getCurrentUrl();
         if(currentUrl != null && currentUrl.equals("https://www.visitparisregion.com/fr/a-voir-a-faire/faire-du-shopping")){
             pageLinks = pageLinks.subList(0, 3);
         }
 
+        System.out.println(pageLinks);
         ArrayList<Activity> activities = new ArrayList<>();
         for(String link : pageLinks){
             this.driver.get(link);
-            this.conditionalWaiting(10000, By.className("crtTeaser-content"), By.className("crtTeaserSmall"));
+            waiting(500, 700);
 
-            if(!this.driver.findElements(By.className("crtTeaser-content")).isEmpty()){ // If it's an activity list page
+            List<WebElement> elements = this.driver.findElements(By.className("crtTeaser-content"));
+            if(!elements.isEmpty()){ // If it's an activity list page
                 // We get the total number of pages there are
                 List<WebElement> paginatorElement = driver.findElements(By.cssSelector("ol.crtPagination-list button"));
                 int pageTotal;
@@ -84,7 +90,10 @@ public class VisitParisRegionScraper extends Scraper {
                 }
             } else { // If it's a mosaic page
                 activities.addAll(this.scrapeMosaicTypePage());
-                //System.out.println("Mosaic");
+            }
+            if(pageLinks.size() == 8){
+                this.i+=100/8;
+                System.out.println(i + "%");
             }
         }
         return activities;
