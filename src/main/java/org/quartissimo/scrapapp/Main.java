@@ -10,7 +10,9 @@ import java.io.IOException;
 public class Main extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        Scene scene = new Scene(new MainView());
+        MainView mainView = new MainView();
+        Scene scene = new Scene(mainView);
+        mainView.setScene(scene);
         stage.setScene(scene);
         stage.setHeight(720);
         stage.setWidth(1080);

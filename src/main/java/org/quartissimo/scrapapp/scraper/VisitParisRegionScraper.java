@@ -11,24 +11,42 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class VisitParisRegionScraper extends Scraper {
     private double i;
+    private List<String> categoriesToScrape = new ArrayList<>();
     public VisitParisRegionScraper(){
         this.domainUrl = "https://www.visitparisregion.com/fr";
+    }
+
+    public void setCategoriesToScrape(List<String> categories) {
+        this.categoriesToScrape = categories;
     }
 
     @Override
     public void scrape() throws Exception {
         this.loadPage(this.domainUrl, By.className("crtTeaserSmall"));
-        this.waiting(1000, 1500);
+        this.waiting(200, 400);
         this.handleCookiesPopup();
-        this.waiting(500, 1000);
+        this.waiting(100, 200);
 
-        // The first page of the website is a "mosaic" type of page
         ArrayList<Activity> activities = this.scrapeMosaicTypePage();
 
-        // Export all activities in a JSON file
+        if (!categoriesToScrape.isEmpty()) {
+            activities = activities.stream()
+                    .filter(activity -> {
+                        if (activity.getCategories().isEmpty()) return false;
+                        for (String category : activity.getCategories()) {
+                            if (categoriesToScrape.contains(category)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
         ObjectMapper mapper = new ObjectMapper();
 
         try{
@@ -51,13 +69,11 @@ public class VisitParisRegionScraper extends Scraper {
     private ArrayList<Activity> scrapeMosaicTypePage() throws InterruptedException {
         List<String> pageLinks = new ArrayList<>();
         WebElement firstContainer = this.driver.findElements(By.className("crtRowLayout")).getFirst();
-        //System.out.println(firstContainer.getAttribute("innerHTML"));
         List<WebElement> links = firstContainer.findElements(By.className("crtTeaserSmall"));
         for(WebElement a_tag : links){
             pageLinks.addLast(a_tag.getAttribute("href"));
         }
 
-        // We check for the shopping page because it is the only mosaic page that has 2 mosaic panels, and we only want the first one to avoid a loop
         String currentUrl = driver.getCurrentUrl();
         if(currentUrl != null && currentUrl.equals("https://www.visitparisregion.com/fr/a-voir-a-faire/faire-du-shopping")){
             pageLinks = pageLinks.subList(0, 3);
@@ -67,28 +83,26 @@ public class VisitParisRegionScraper extends Scraper {
         ArrayList<Activity> activities = new ArrayList<>();
         for(String link : pageLinks){
             this.driver.get(link);
-            waiting(500, 700);
+            waiting(200, 400);
 
             List<WebElement> elements = this.driver.findElements(By.className("crtTeaser-content"));
-            if(!elements.isEmpty()){ // If it's an activity list page
-                // We get the total number of pages there are
+            if(!elements.isEmpty()){
                 List<WebElement> paginatorElement = driver.findElements(By.cssSelector("ol.crtPagination-list button"));
                 int pageTotal;
                 if(paginatorElement.isEmpty())
-                    pageTotal = 1; // The paginator does not exist if there's only 1 page
+                    pageTotal = 1;
                 else
                     pageTotal = Integer.parseInt(paginatorElement.getLast().getText());
 
-                // We scrape each page
-                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 2; currentPage++) {
+                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 10; currentPage++) {
                     if(currentPage > 1) {
                         this.loadPage(link + "?page=" + currentPage, By.className("crtTeaser-content"));
                     }
-                    this.waiting(1000, 1500);
+                    this.waiting(200, 400);
 
                     activities.addAll(this.scrapeListTypePage());
                 }
-            } else { // If it's a mosaic page
+            } else {
                 activities.addAll(this.scrapeMosaicTypePage());
             }
             if(pageLinks.size() == 8){
@@ -104,50 +118,33 @@ public class VisitParisRegionScraper extends Scraper {
 
         int i = 0;
         List<WebElement> activityArticles = this.driver.findElements(By.className("crtTeaser-content"));
-        Activity newActivity; // This will store the newActivity in the loop
+        Activity newActivity;
 
         for (WebElement article : activityArticles) {
             newActivity = new Activity();
 
-            // Get the activity name
             WebElement titleLink = article.findElement(By.className("crtTeaser-title"));
             newActivity.setTitle(titleLink.getText());
             String activityPageLink = titleLink.getAttribute("href");
 
-
-            // Get the activity teaser
             Optional<WebElement> shortDesc = this.safeFindElementInElement(article, By.className("crtTeaser-desc"));
             if (shortDesc.isPresent()) {
                 String teaser = shortDesc.get().getAttribute("innerText");
                 newActivity.setShortDescription(teaser != null ? teaser.trim() : "");
             }
 
-            // Get the activity categories
             List<WebElement> categorySpans = article.findElements(By.className("crtTeaser-segment"));
             for (WebElement span : categorySpans)
                 newActivity.pushCategory(span.getText());
 
-            // Open a new tab to keep the articles list page alive
             this.driver.switchTo().newWindow(WindowType.TAB);
 
-            // Load the activity page
             this.loadPage(activityPageLink, By.id("informations"));
-            this.waiting(1000, 1500);
+            this.waiting(200, 400);
 
-            /*
-            // Get description
-            Optional<WebElement> description = this.safeFindElement(By.cssSelector("#description .is-contrib"));
-            if(description.isPresent()){
-                newActivity.setDescription(description.get().getText());
-            }
-            */
-
-            // TODO Get the exception bc without this it doesnt work
             WebElement infos = driver.findElement(By.id("informations"));
 
-            // Get website
             Optional<WebElement> websiteContainer = this.safeFindElementInElement(infos, By.className("crtProductContact-link"));
-
             if (websiteContainer.isPresent()) {
                 String link = websiteContainer.get().getAttribute("href");
                 if (link != null) {
@@ -158,7 +155,6 @@ public class VisitParisRegionScraper extends Scraper {
                 }
             }
 
-            // Get the address
             Optional<WebElement> addressFirstLineContainer = this.safeFindElementInElement(infos, By.className("crtProductContact-address-1"));
             if (addressFirstLineContainer.isPresent()) {
                 newActivity.setAddress(addressFirstLineContainer.get().getText());
@@ -175,29 +171,24 @@ public class VisitParisRegionScraper extends Scraper {
                 }
             }
 
-            // Get phone number
             Optional<WebElement> phoneNumberContainer = this.safeFindElementInElement(infos, By.cssSelector(".crtProductContact-phone a"));
             if (phoneNumberContainer.isPresent()) {
                 newActivity.setPhoneNumber(phoneNumberContainer.get().getText());
             }
 
-            // Get opening hours
             Optional<WebElement> hoursContainer = this.safeFindElementInElement(infos, By.cssSelector("div.crtProductOpeningDays div.decorated"));
             if (hoursContainer.isPresent()) {
                 newActivity.setAvailabilities(hoursContainer.get().getText());
             }
 
-            // Get prices
             Optional<WebElement> pricesContainer = this.safeFindElementInElement(infos, By.cssSelector("div.crtProductPrices div.decorated"));
             if (pricesContainer.isPresent()) {
                 newActivity.setPrices(pricesContainer.get().getText());
             }
 
-            // Closing tab and going back to the first one
             this.closeTab();
 
             activities.addLast(newActivity);
-            if (++i == 1) return activities;
         }
         return activities;
     }
