@@ -1,7 +1,7 @@
 .root {
     -fx-font-family: "Segoe UI", "Arial", sans-serif;
-    -fx-base: #f4f4f4;
-    -fx-background: #f4f4f4;
+    -fx-base: #f4f8ff;
+    -fx-background: #f4f8ff;
 }
 
 .label {
@@ -9,15 +9,36 @@
 }
 
 .button {
-    -fx-background-color: #e0e0e0;
-    -fx-text-fill: #222;
+    -fx-background-color: #4e8cff;
+    -fx-text-fill: #fff;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, #b3d1ff, 4, 0.2, 0, 2);
+}
+.button:hover {
+    -fx-background-color: #2566c7;
 }
 
 .list-view {
-    -fx-background-color: #fff;
+    -fx-background-color: #eaf2ff;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #4e8cff;
+}
+
+.list-cell {
+    -fx-text-fill: #222;
 }
 
 .text-area {
     -fx-background-color: #fff;
     -fx-text-fill: #333;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #4e8cff;
 }
+
+.progress-bar {
+    -fx-accent: #4e8cff;
+}
+

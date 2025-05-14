@@ -9,15 +9,36 @@
 }
 
 .button {
-    -fx-background-color: #333a44;
-    -fx-text-fill: #e0e0e0;
+    -fx-background-color: #4e8cff;
+    -fx-text-fill: #fff;
+    -fx-background-radius: 8;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, #1a2330, 4, 0.2, 0, 2);
+}
+.button:hover {
+    -fx-background-color: #2566c7;
 }
 
 .list-view {
     -fx-background-color: #23272e;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #4e8cff;
+}
+
+.list-cell {
+    -fx-text-fill: #e0e0e0;
 }
 
 .text-area {
     -fx-background-color: #23272e;
     -fx-text-fill: #e0e0e0;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #4e8cff;
 }
+
+.progress-bar {
+    -fx-accent: #4e8cff;
+}
+

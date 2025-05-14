@@ -7,6 +7,8 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -28,9 +30,9 @@ public class MainView extends BorderPane {
     private final ListView<Activity> resultsListView;
     private final TextArea detailsArea;
     private final Button scrapeButton;
-    private final Button scrapeAllButton;
     private final ProgressBar progressBar;
     private final Label statusLabel;
+    private final Label currentSiteLabel;
     private final ExecutorService executorService;
     private Set<String> selectedCategories = new HashSet<>();
     private List<Activity> allActivities = new ArrayList<>();
@@ -48,7 +50,7 @@ public class MainView extends BorderPane {
 
         VBox categoryPanel = new VBox(10);
         categoryPanel.setPadding(new Insets(10));
-        Label categoryLabel = new Label("Filter by Categories");
+        Label categoryLabel = new Label("Filtrer par catégories");
         categoryLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         categoryListView = new ListView<>();
         categoryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -61,7 +63,7 @@ public class MainView extends BorderPane {
 
         VBox resultsPanel = new VBox(10);
         resultsPanel.setPadding(new Insets(10));
-        Label resultsLabel = new Label("Activities");
+        Label resultsLabel = new Label("Activités");
         resultsLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         resultsListView = new ListView<>();
         resultsListView.setCellFactory(lv -> new ListCell<>() {
@@ -84,7 +86,7 @@ public class MainView extends BorderPane {
 
         VBox detailsPanel = new VBox(10);
         detailsPanel.setPadding(new Insets(10));
-        Label detailsLabel = new Label("Details");
+        Label detailsLabel = new Label("Détails");
         detailsLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
         detailsArea = new TextArea();
         detailsArea.setEditable(false);
@@ -93,26 +95,77 @@ public class MainView extends BorderPane {
 
         HBox controlsPanel = new HBox(10);
         controlsPanel.setPadding(new Insets(10));
-        scrapeButton = new Button("Scrape Visit Paris Region");
+        scrapeButton = new Button("Scraper Visit Paris Region");
         scrapeButton.setOnAction(e -> startScraping());
-        scrapeAllButton = new Button("Scrape toutes les catégories");
-        scrapeAllButton.setOnAction(e -> startScrapingAll());
         progressBar = new ProgressBar(0);
         progressBar.setVisible(false);
         progressBar.setPrefWidth(200);
-        statusLabel = new Label("Ready");
-        controlsPanel.getChildren().addAll(scrapeButton, scrapeAllButton, progressBar, statusLabel);
+        statusLabel = new Label("Prêt");
+        controlsPanel.getChildren().addAll(scrapeButton, progressBar, statusLabel);
+
+        currentSiteLabel = new Label("Aucun site scrappé");
+        currentSiteLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #4e8cff;");
 
         VBox mainContent = new VBox();
         mainContent.getChildren().addAll(controlsPanel);
         setLeft(categoryPanel);
         setCenter(resultsPanel);
         setBottom(detailsPanel);
-        setTop(new VBox(menuBar, controlsPanel));
+
+        VBox topBox = new VBox(menuBar, controlsPanel, currentSiteLabel);
+        setTop(topBox);
 
         loadActivitiesFromFile();
         loadThemes();
         applyDefaultTheme();
+
+        // Effet sur la liste des résultats
+        resultsListView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4e8cff;");
+        resultsListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(Activity item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    setText(item.getTitle());
+                    Circle dot = new Circle(5, Color.web("#4e8cff"));
+                    setGraphic(dot);
+                    if (isSelected()) {
+                        setStyle("-fx-background-color: #f4f8ff; -fx-padding: 8px; -fx-font-size: 13px; -fx-text-fill: #2566c7;");
+                    } else {
+                        setStyle("-fx-background-color: #f4f8ff; -fx-padding: 8px; -fx-font-size: 13px; -fx-text-fill: -fx-text-inner-color;");
+                    }
+                }
+            }
+        });
+
+        // Effet sur la liste des catégories, sélection en bleu, sinon couleur de base
+        categoryListView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4e8cff;");
+        categoryListView.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    if (isSelected()) {
+                        setStyle("-fx-background-color: #eaf2ff; -fx-padding: 6px; -fx-font-size: 12px; -fx-text-fill: #2566c7;");
+                    } else {
+                        setStyle("-fx-background-color: #eaf2ff; -fx-padding: 6px; -fx-font-size: 12px; -fx-text-fill: -fx-text-inner-color;");
+                    }
+                }
+            }
+        });
+
+        scrapeButton.setStyle("-fx-background-color: #4e8cff; -fx-text-fill: white; -fx-background-radius: 8;");
+        progressBar.setStyle("-fx-accent: #4e8cff;");
+        detailsArea.setStyle("-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4e8cff;");
     }
 
     public void setScene(Scene scene) {
@@ -190,7 +243,7 @@ public class MainView extends BorderPane {
                 filterActivities();
             }
         } catch (IOException e) {
-            statusLabel.setText("Error loading activities: " + e.getMessage());
+            statusLabel.setText("Erreur lors du chargement des activités : " + e.getMessage());
         }
     }
 
@@ -212,20 +265,20 @@ public class MainView extends BorderPane {
             filteredActivities = FXCollections.observableArrayList(filtered);
         }
         resultsListView.setItems(filteredActivities);
-        statusLabel.setText("Showing " + filteredActivities.size() + " activities");
+        statusLabel.setText("Affichage de " + filteredActivities.size() + " activités");
     }
 
     private void displayActivityDetails(Activity activity) {
         StringBuilder details = new StringBuilder();
-        details.append("Title: ").append(activity.getTitle()).append("\n\n");
+        details.append("Titre : ").append(activity.getTitle()).append("\n\n");
         if (!activity.getCategories().isEmpty()) {
-            details.append("Categories: ").append(String.join(", ", activity.getCategories())).append("\n\n");
+            details.append("Catégories : ").append(String.join(", ", activity.getCategories())).append("\n\n");
         }
         if (!activity.getShortDescription().isEmpty()) {
-            details.append("Description: ").append(activity.getShortDescription()).append("\n\n");
+            details.append("Description : ").append(activity.getShortDescription()).append("\n\n");
         }
         if (!activity.getAddress().isEmpty() || !activity.getZipcode().isEmpty() || !activity.getCity().isEmpty()) {
-            details.append("Location: ");
+            details.append("Lieu : ");
             if (!activity.getAddress().isEmpty()) {
                 details.append(activity.getAddress()).append(", ");
             }
@@ -238,29 +291,30 @@ public class MainView extends BorderPane {
             details.append("\n\n");
         }
         if (!activity.getPhoneNumber().isEmpty()) {
-            details.append("Phone: ").append(activity.getPhoneNumber()).append("\n\n");
+            details.append("Téléphone : ").append(activity.getPhoneNumber()).append("\n\n");
         }
         if (!activity.getWebSite().isEmpty()) {
-            details.append("Website: ").append(activity.getWebSite()).append("\n\n");
+            details.append("Site web : ").append(activity.getWebSite()).append("\n\n");
         }
         if (!activity.getAvailabilities().isEmpty()) {
-            details.append("Availabilities: ").append(activity.getAvailabilities()).append("\n\n");
+            details.append("Horaires : ").append(activity.getAvailabilities()).append("\n\n");
         }
         if (!activity.getPrices().isEmpty()) {
-            details.append("Prices: ").append(activity.getPrices());
+            details.append("Tarifs : ").append(activity.getPrices());
         }
         detailsArea.setText(details.toString());
     }
 
     private void startScraping() {
         scrapeButton.setDisable(true);
-        scrapeAllButton.setDisable(true);
         progressBar.setVisible(true);
         progressBar.setProgress(-1);
-        statusLabel.setText("Scraping in progress...");
+        statusLabel.setText("Scrapping en cours...");
+        updateCurrentSite("Visit Paris Region");
         executorService.submit(() -> {
             try {
                 VisitParisRegionScraper scraper = new VisitParisRegionScraper();
+                scraper.setOnSiteScrapedCallback(this::updateCurrentSite);
                 if (!selectedCategories.isEmpty()) {
                     scraper.setCategoriesToScrape(new ArrayList<>(selectedCategories));
                 }
@@ -271,50 +325,23 @@ public class MainView extends BorderPane {
                     loadCategories();
                     loadThemes();
                     scrapeButton.setDisable(false);
-                    scrapeAllButton.setDisable(false);
                     progressBar.setVisible(false);
-                    statusLabel.setText("Scraping completed successfully");
+                    int nbSites = allActivities.size();
+                    statusLabel.setText("Scrapping terminé : " + nbSites + " sites ont été scrappés");
+                    updateCurrentSite("Aucun site scrappé");
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     scrapeButton.setDisable(false);
-                    scrapeAllButton.setDisable(false);
                     progressBar.setVisible(false);
-                    statusLabel.setText("Error during scraping: " + e.getMessage());
+                    statusLabel.setText("Erreur lors du scrapping : " + e.getMessage());
+                    updateCurrentSite("Aucun site scrappé");
                 });
             }
         });
     }
 
-    private void startScrapingAll() {
-        scrapeButton.setDisable(true);
-        scrapeAllButton.setDisable(true);
-        progressBar.setVisible(true);
-        progressBar.setProgress(-1);
-        statusLabel.setText("Scraping toutes les catégories...");
-        executorService.submit(() -> {
-            try {
-                VisitParisRegionScraper scraper = new VisitParisRegionScraper();
-                scraper.setCategoriesToScrape(Collections.emptyList());
-                ScraperLauncher scraperLauncher = new ScraperLauncher(scraper);
-                scraperLauncher.launchScrapers();
-                Platform.runLater(() -> {
-                    loadActivitiesFromFile();
-                    loadCategories();
-                    loadThemes();
-                    scrapeButton.setDisable(false);
-                    scrapeAllButton.setDisable(false);
-                    progressBar.setVisible(false);
-                    statusLabel.setText("Scraping completed successfully");
-                });
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    scrapeButton.setDisable(false);
-                    scrapeAllButton.setDisable(false);
-                    progressBar.setVisible(false);
-                    statusLabel.setText("Error during scraping: " + e.getMessage());
-                });
-            }
-        });
+    private void updateCurrentSite(String site) {
+        Platform.runLater(() -> currentSiteLabel.setText("Scrapping : " + site));
     }
 }

@@ -16,6 +16,16 @@ import java.util.stream.Collectors;
 public class VisitParisRegionScraper extends Scraper {
     private double i;
     private List<String> categoriesToScrape = new ArrayList<>();
+
+    // Define a functional interface for the callback
+    @FunctionalInterface
+    public interface SiteScrapedCallback {
+        void onSiteScraping(String siteName);
+    }
+
+    // Field to store the callback
+    private SiteScrapedCallback siteScrapedCallback;
+
     public VisitParisRegionScraper(){
         this.domainUrl = "https://www.visitparisregion.com/fr";
     }
@@ -24,12 +34,24 @@ public class VisitParisRegionScraper extends Scraper {
         this.categoriesToScrape = categories;
     }
 
+    // Method to set the callback
+    public void setOnSiteScrapedCallback(SiteScrapedCallback callback) {
+        this.siteScrapedCallback = callback;
+    }
+
+    // Method to call the callback
+    private void notifySiteScraped(String siteName) {
+        if (this.siteScrapedCallback != null) {
+            this.siteScrapedCallback.onSiteScraping(siteName);
+        }
+    }
+
     @Override
     public void scrape() throws Exception {
         this.loadPage(this.domainUrl, By.className("crtTeaserSmall"));
-        this.waiting(200, 400);
+        this.waiting(50, 100);
         this.handleCookiesPopup();
-        this.waiting(100, 200);
+        this.waiting(30, 60);
 
         ArrayList<Activity> activities = this.scrapeMosaicTypePage();
 
@@ -76,14 +98,17 @@ public class VisitParisRegionScraper extends Scraper {
 
         String currentUrl = driver.getCurrentUrl();
         if(currentUrl != null && currentUrl.equals("https://www.visitparisregion.com/fr/a-voir-a-faire/faire-du-shopping")){
-            pageLinks = pageLinks.subList(0, 3);
+            pageLinks = pageLinks.subList(0, Math.min(3, pageLinks.size()));
         }
 
         System.out.println(pageLinks);
         ArrayList<Activity> activities = new ArrayList<>();
         for(String link : pageLinks){
+            // Notify UI of current site being scraped
+            notifySiteScraped(link);
+
             this.driver.get(link);
-            waiting(200, 400);
+            waiting(50, 100);
 
             List<WebElement> elements = this.driver.findElements(By.className("crtTeaser-content"));
             if(!elements.isEmpty()){
@@ -98,7 +123,7 @@ public class VisitParisRegionScraper extends Scraper {
                     if(currentPage > 1) {
                         this.loadPage(link + "?page=" + currentPage, By.className("crtTeaser-content"));
                     }
-                    this.waiting(200, 400);
+                    this.waiting(50, 100);
 
                     activities.addAll(this.scrapeListTypePage());
                 }
@@ -127,6 +152,9 @@ public class VisitParisRegionScraper extends Scraper {
             newActivity.setTitle(titleLink.getText());
             String activityPageLink = titleLink.getAttribute("href");
 
+            // Notify UI of current activity being scraped
+            notifySiteScraped(newActivity.getTitle());
+
             Optional<WebElement> shortDesc = this.safeFindElementInElement(article, By.className("crtTeaser-desc"));
             if (shortDesc.isPresent()) {
                 String teaser = shortDesc.get().getAttribute("innerText");
@@ -140,8 +168,7 @@ public class VisitParisRegionScraper extends Scraper {
             this.driver.switchTo().newWindow(WindowType.TAB);
 
             this.loadPage(activityPageLink, By.id("informations"));
-            this.waiting(200, 400);
-
+            this.waiting(50, 100);
             WebElement infos = driver.findElement(By.id("informations"));
 
             Optional<WebElement> websiteContainer = this.safeFindElementInElement(infos, By.className("crtProductContact-link"));
