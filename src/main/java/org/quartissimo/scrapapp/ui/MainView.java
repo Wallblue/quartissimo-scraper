@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -37,6 +38,7 @@ public class MainView extends BorderPane {
     private Set<String> selectedCategories = new HashSet<>();
     private List<Activity> allActivities = new ArrayList<>();
     private Menu themesMenu;
+    private Menu pluginMenu;
     private Scene scene;
     private File currentThemeFile;
 
@@ -46,7 +48,31 @@ public class MainView extends BorderPane {
         MenuBar menuBar = new MenuBar();
         themesMenu = new Menu("Thèmes");
         menuBar.getMenus().add(themesMenu);
+        pluginMenu = new Menu("Plugins");
+        menuBar.getMenus().add(pluginMenu);
         setTop(menuBar);
+
+        pluginMenu.getItems().clear();
+
+
+        Menu exportMenu = new Menu("Export");
+        MenuItem exportCsv = new MenuItem("Exporter en CSV");
+
+        MenuItem exportJson = new MenuItem("Exporter en JSON");
+
+        exportMenu.getItems().addAll(exportCsv, exportJson);
+
+
+        Menu analyseMenu = new Menu("Analyse");
+        MenuItem analyseCategories = new MenuItem("Analyse des catégories");
+
+        MenuItem analyseLocations = new MenuItem("Analyse des localisations");
+
+        analyseMenu.getItems().addAll(analyseCategories, analyseLocations);
+
+
+        pluginMenu.getItems().addAll(exportMenu, analyseMenu);
+
 
         VBox categoryPanel = new VBox(10);
         categoryPanel.setPadding(new Insets(10));
@@ -112,14 +138,24 @@ public class MainView extends BorderPane {
         setCenter(resultsPanel);
         setBottom(detailsPanel);
 
-        VBox topBox = new VBox(menuBar, controlsPanel, currentSiteLabel);
+        Label titleLabel = new Label("Quartissimo");
+        titleLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #4e8cff;");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox menuBarWithTitle = new HBox();
+        menuBarWithTitle.getChildren().addAll(menuBar, spacer, titleLabel);
+        menuBarWithTitle.setAlignment(Pos.CENTER_LEFT);
+        menuBarWithTitle.setPadding(new Insets(5, 10, 5, 0));
+
+        VBox topBox = new VBox(menuBarWithTitle, controlsPanel, currentSiteLabel);
         setTop(topBox);
 
         loadActivitiesFromFile();
         loadThemes();
         applyDefaultTheme();
 
-        // Effet sur la liste des résultats
         resultsListView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4e8cff;");
         resultsListView.setCellFactory(lv -> new ListCell<>() {
             @Override
@@ -142,7 +178,6 @@ public class MainView extends BorderPane {
             }
         });
 
-        // Effet sur la liste des catégories, sélection en bleu, sinon couleur de base
         categoryListView.setStyle("-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #4e8cff;");
         categoryListView.setCellFactory(lv -> new ListCell<>() {
             @Override
@@ -328,7 +363,7 @@ public class MainView extends BorderPane {
                     progressBar.setVisible(false);
                     int nbSites = allActivities.size();
                     statusLabel.setText("Scrapping terminé : " + nbSites + " sites ont été scrappés");
-                    updateCurrentSite("Aucun site scrappé");
+                    updateCurrentSite("tout les sites on été scrappé");
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {

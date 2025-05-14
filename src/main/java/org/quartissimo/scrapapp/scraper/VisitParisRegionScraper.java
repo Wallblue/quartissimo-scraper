@@ -119,7 +119,7 @@ public class VisitParisRegionScraper extends Scraper {
                 else
                     pageTotal = Integer.parseInt(paginatorElement.getLast().getText());
 
-                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 10; currentPage++) {
+                for(int currentPage = 1; currentPage <= pageTotal && currentPage <= 5; currentPage++) {
                     if(currentPage > 1) {
                         this.loadPage(link + "?page=" + currentPage, By.className("crtTeaser-content"));
                     }
