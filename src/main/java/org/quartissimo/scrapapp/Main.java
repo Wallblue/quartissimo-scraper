@@ -1,11 +1,12 @@
 package org.quartissimo.scrapapp;
 
+import java.io.IOException;
+
+import org.quartissimo.scrapapp.ui.MainView;
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.quartissimo.scrapapp.ui.MainView;
-
-import java.io.IOException;
 
 public class Main extends Application {
     @Override

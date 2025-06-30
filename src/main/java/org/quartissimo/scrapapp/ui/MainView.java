@@ -1,30 +1,50 @@
 package org.quartissimo.scrapapp.ui;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import org.quartissimo.scrapapp.scraper.GenericScraper;
+import org.quartissimo.scrapapp.scraper.ScraperLauncher;
+import org.quartissimo.scrapapp.scraper.VisitParisRegionScraper;
+import org.quartissimo.scrapapp.scraper.models.Activity;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.quartissimo.scrapapp.scraper.ScraperLauncher;
-import org.quartissimo.scrapapp.scraper.VisitParisRegionScraper;
-import org.quartissimo.scrapapp.scraper.models.Activity;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 public class MainView extends BorderPane {
     private final ListView<String> categoryListView;
@@ -121,13 +141,25 @@ public class MainView extends BorderPane {
 
         HBox controlsPanel = new HBox(10);
         controlsPanel.setPadding(new Insets(10));
+        
+        // Champ de saisie d'URL
+        Label urlLabel = new Label("URL du site à scraper:");
+        TextField urlField = new TextField();
+        urlField.setPromptText("https://example.com");
+        urlField.setPrefWidth(300);
+        
         scrapeButton = new Button("Scraper Visit Paris Region");
         scrapeButton.setOnAction(e -> startScraping());
+        
+        Button customScrapeButton = new Button("Scraper Site Personnalisé");
+        customScrapeButton.setOnAction(e -> startCustomScraping(urlField.getText()));
+        customScrapeButton.setStyle("-fx-background-color: #28a745; -fx-text-fill: white; -fx-background-radius: 8;");
+        
         progressBar = new ProgressBar(0);
         progressBar.setVisible(false);
         progressBar.setPrefWidth(200);
         statusLabel = new Label("Prêt");
-        controlsPanel.getChildren().addAll(scrapeButton, progressBar, statusLabel);
+        controlsPanel.getChildren().addAll(urlLabel, urlField, scrapeButton, customScrapeButton, progressBar, statusLabel);
 
         currentSiteLabel = new Label("Aucun site scrappé");
         currentSiteLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #4e8cff;");
@@ -364,6 +396,56 @@ public class MainView extends BorderPane {
                     int nbSites = allActivities.size();
                     statusLabel.setText("Scrapping terminé : " + nbSites + " sites ont été scrappés");
                     updateCurrentSite("tout les sites on été scrappé");
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    scrapeButton.setDisable(false);
+                    progressBar.setVisible(false);
+                    statusLabel.setText("Erreur lors du scrapping : " + e.getMessage());
+                    updateCurrentSite("Aucun site scrappé");
+                });
+            }
+        });
+    }
+
+    private void startCustomScraping(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            statusLabel.setText("Veuillez saisir une URL valide");
+            return;
+        }
+        
+        // Validation basique de l'URL
+        final String finalUrl;
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            finalUrl = "https://" + url;
+        } else {
+            finalUrl = url;
+        }
+        
+        scrapeButton.setDisable(true);
+        progressBar.setVisible(true);
+        progressBar.setProgress(-1);
+        statusLabel.setText("Scrapping en cours...");
+        updateCurrentSite("Site personnalisé: " + finalUrl);
+        
+        executorService.submit(() -> {
+            try {
+                GenericScraper scraper = new GenericScraper(finalUrl);
+                ScraperLauncher scraperLauncher = new ScraperLauncher(scraper);
+                scraperLauncher.launchScrapers();
+                
+                // Récupérer les résultats
+                List<Activity> newActivities = scraper.getActivities();
+                allActivities.addAll(newActivities);
+                
+                Platform.runLater(() -> {
+                    loadActivitiesFromFile();
+                    loadCategories();
+                    loadThemes();
+                    scrapeButton.setDisable(false);
+                    progressBar.setVisible(false);
+                    statusLabel.setText("Scrapping terminé : " + newActivities.size() + " activité(s) trouvée(s)");
+                    updateCurrentSite("Site personnalisé scrapé avec succès");
                 });
             } catch (Exception e) {
                 Platform.runLater(() -> {

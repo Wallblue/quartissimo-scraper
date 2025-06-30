@@ -1,4 +1,4 @@
-module com.quartissimo.scrapapp.ui {
+module org.quartissimo.scrapapp {
     requires javafx.controls;
     requires javafx.fxml;
 
@@ -13,6 +13,7 @@ module com.quartissimo.scrapapp.ui {
     exports org.quartissimo.scrapapp;
     exports org.quartissimo.scrapapp.ui;
     exports org.quartissimo.scrapapp.ui.theme;
+    exports org.quartissimo.scrapapp.scraper;
     requires dev.failsafe.core;
     requires org.apache.commons.io;
     requires com.fasterxml.jackson.databind;
