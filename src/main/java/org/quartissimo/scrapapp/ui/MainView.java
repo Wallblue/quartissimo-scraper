@@ -11,6 +11,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
+import org.quartissimo.pluginapi.Plugin;
+import org.quartissimo.scrapapp.PluginLoader;
 import org.quartissimo.scrapapp.scraper.GenericScraper;
 import org.quartissimo.scrapapp.scraper.ScraperLauncher;
 import org.quartissimo.scrapapp.scraper.VisitParisRegionScraper;
@@ -74,25 +76,18 @@ public class MainView extends BorderPane {
 
         pluginMenu.getItems().clear();
 
+        PluginLoader loader = new PluginLoader();
+        List<Plugin> plugins = loader.loadPluginsFrom();
 
-        Menu exportMenu = new Menu("Export");
-        MenuItem exportCsv = new MenuItem("Exporter en CSV");
+        for (Plugin plugin : plugins) {
+            MenuItem item = plugin.createMenuItem();
 
-        MenuItem exportJson = new MenuItem("Exporter en JSON");
-
-        exportMenu.getItems().addAll(exportCsv, exportJson);
-
-
-        Menu analyseMenu = new Menu("Analyse");
-        MenuItem analyseCategories = new MenuItem("Analyse des catégories");
-
-        MenuItem analyseLocations = new MenuItem("Analyse des localisations");
-
-        analyseMenu.getItems().addAll(analyseCategories, analyseLocations);
-
-
-        pluginMenu.getItems().addAll(exportMenu, analyseMenu);
-
+            if (item == null) {
+                plugin.execute();
+            } else {
+                pluginMenu.getItems().add(item);
+            }
+        }
 
         VBox categoryPanel = new VBox(10);
         categoryPanel.setPadding(new Insets(10));

@@ -1,4 +1,5 @@
 module org.quartissimo.scrapapp {
+    uses org.quartissimo.pluginapi.Plugin;
     requires javafx.controls;
     requires javafx.fxml;
 
@@ -18,6 +19,7 @@ module org.quartissimo.scrapapp {
     requires org.apache.commons.io;
     requires com.fasterxml.jackson.databind;
     requires com.fasterxml.jackson.core;
+    requires org.quartissimo.pluginapi;
     exports org.quartissimo.scrapapp.scraper.models to com.fasterxml.jackson.databind;
     opens org.quartissimo.scrapapp.ui to javafx.fxml;
 }
