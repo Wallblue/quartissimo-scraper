@@ -280,7 +280,7 @@ public class MainView extends BorderPane {
 
     private void loadCategories() {
         try {
-            File jsonFile = new File("src/main/resources/export.json");
+            File jsonFile = new File(System.getProperty("user.home") + "/.quartissimo/export.json");
             if (jsonFile.exists()) {
                 ObjectMapper mapper = new ObjectMapper();
                 List<Activity> activities = mapper.readValue(jsonFile, new TypeReference<List<Activity>>() {});
@@ -298,7 +298,7 @@ public class MainView extends BorderPane {
 
     private void loadActivitiesFromFile() {
         try {
-            File jsonFile = new File("src/main/resources/export.json");
+            File jsonFile = new File(System.getProperty("user.home") + "/.quartissimo/export.json");
             if (jsonFile.exists()) {
                 ObjectMapper mapper = new ObjectMapper();
                 allActivities = mapper.readValue(jsonFile, new TypeReference<List<Activity>>() {});

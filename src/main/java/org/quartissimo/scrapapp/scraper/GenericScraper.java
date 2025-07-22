@@ -2,6 +2,8 @@ package org.quartissimo.scrapapp.scraper;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,7 +130,8 @@ public class GenericScraper extends Scraper {
         try {
             // Charger les activités existantes
             List<Activity> existingActivities = new ArrayList<>();
-            File jsonFile = new File("src/main/resources/export.json");
+            Path jsonPath = Paths.get(System.getProperty("user.home"), ".quartissimo", "export.json");
+            File jsonFile = jsonPath.toFile();
             if (jsonFile.exists()) {
                 ObjectMapper mapper = new ObjectMapper();
                 existingActivities = mapper.readValue(jsonFile, new TypeReference<List<Activity>>() {});

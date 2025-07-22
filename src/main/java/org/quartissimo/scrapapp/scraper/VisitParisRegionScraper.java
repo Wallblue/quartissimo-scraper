@@ -8,6 +8,9 @@ import org.openqa.selenium.WindowType;
 import org.quartissimo.scrapapp.scraper.models.Activity;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -73,8 +76,9 @@ public class VisitParisRegionScraper extends Scraper {
 
         try{
             mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-            String filePath = "src/main/resources/export.json";
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(filePath), activities);
+            Path output = Paths.get(System.getProperty("user.home"), ".quartissimo", "export.json");
+            Files.createDirectories(output.getParent());
+            mapper.writerWithDefaultPrettyPrinter().writeValue(output.toFile(), activities);
             System.out.println("Export done.");
         }catch(Exception e){
             e.printStackTrace();

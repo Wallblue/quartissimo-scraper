@@ -53,7 +53,7 @@ public class PluginLoader {
                 );
 
                 ServiceLoader<Plugin> plugins = ServiceLoader.load(Plugin.class, loader);
-                Path resourcesFolder = Paths.get("src/main/resources/");
+                Path resourcesFolder = Paths.get(System.getProperty("user.home"), ".quartissimo");
                 for (Plugin plugin : plugins) {
                     if (plugin instanceof NeedingResourcePlugin) {
                         ((NeedingResourcePlugin) plugin).setResourcesFolderPath(resourcesFolder);
